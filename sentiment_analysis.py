@@ -1,7 +1,7 @@
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.tokenize import sent_tokenize
-
+nltk.download('vader_lexicon')
 analyser = SentimentIntensityAnalyzer()
 def vader_sentiment_result(text):
   scores = analyser.polarity_scores(text)
