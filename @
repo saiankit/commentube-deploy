@@ -155,6 +155,9 @@ def process_sentiments(sentiments):
             sentiments_final.append("Negative")
     return sentiments_final
 
+def showCards(originals, predictions, sentiments, options):
+    
+    
 
 col1.header("CommenTube📽️")
 youtube_url = col1.text_input('Enter Youtube URL')
@@ -171,18 +174,32 @@ if col1.button('Run 🪄'):
             originals = df['original'].to_list()
             sentiments = process_sentiments(df['sentiments'].to_list())
             predictions = df['predictions'].to_list()
-            # options = st.multiselect(
-            # 'Choose Labels',
-            # ['interrogative', 'imperative', 'corrective', 'miscellaneous', 'others'],
-            # ['interrogative', 'imperative', 'corrective', 'miscellaneous', 'others'],
-            # )
+            options = st.multiselect(
+            'Choose Labels',
+            ['interrogative', 'imperative', 'corrective', 'miscellaneous', 'others'],
+            ['interrogative', 'imperative', 'corrective', 'miscellaneous', 'others'],
+            )
+
+            showCards(originals, predictions, sentiments, options)
+            final_originals = []
+            final_predictions = []
+            final_sentiments = []
+    
+            for i in range(0, len(originals)):
+                for j in range(0, len(options)):
+                    print(predictions[i])
+                    print(options[j])
+                    if predictions[i] == options[j]:
+                        final_originals.append(originals[i])
+                        final_sentiments.append(sentiments[i])
+                        final_predictions.append(predictions[i])
 
             col11, col22 = st.columns(2)
-            for i in range(0, len(originals)):
+            for i in range(0, len(final_originals)):
                 if (i % 2 == 0 ):
                     with col11:
-                        st.write(card(originals[i], predictions[i], sentiments[i]), unsafe_allow_html=True)
+                        st.write(card(final_originals[i], final_predictions[i], final_sentiments[i]), unsafe_allow_html=True)
                 else:
                     with col22:
-                        st.write(card(originals[i], predictions[i], sentiments[i]), unsafe_allow_html=True)
+                        st.write(card(final_originals[i], final_predictions[i], final_sentiments[i]), unsafe_allow_html=True)
 
