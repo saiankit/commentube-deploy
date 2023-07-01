@@ -1,23 +1,26 @@
-contractions==0.1.73
-huggingface-hub==0.14.1
-matplotlib==3.7.1
-nltk==3.8.1
-numpy==1.24.3
-pandas==2.0.1
-Pillow==9.5.0
-regex==2023.5.4
-requests==2.30.0
-scikit-learn==1.2.2
-scipy==1.10.1
-sentence-transformers==2.2.2
-sentencepiece==0.1.99
-streamlit==1.22.0
-textsearch==0.0.24
-tokenizers==0.13.3
-torch==2.0.0
-transformers==4.28.1
-Unidecode==1.3.6
-urllib3==2.0.1
-youtube-comment-downloader==0.1.68
-ktrain==0.37.1
 autocorrect == 2.6.1
+contractions == 0.1.73
+huggingface-hub == 0.14.1
+matplotlib == 3.7.1
+nltk == 3.8.1
+numpy == 1.24.3
+pandas == 2.0.1
+Pillow == 9.5.0
+plotly-express == 0.4.1
+regex == 2023.5.4
+requests == 2.30.0
+scikit-learn == 1.2.2
+scipy == 1.10.1
+sentence-transformers == 2.2.2
+sentencepiece == 0.1.99
+streamlit == 1.22.0
+textsearch == 0.0.24
+tokenizers == 0.13.3
+torch == 2.0.0
+transformers == 4.28.1
+Unidecode == 1.3.6
+urllib3 == 2.0.1
+youtube-comment-downloader == 0.1.68
+ktrain == 0.37.1
+seaborn == 1.12.2
+

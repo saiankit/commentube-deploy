@@ -89,4 +89,4 @@ def pre_process(comments_df):
     comments_df['text'] = comments_df['text'].apply(lambda x: ' '.join([lemmatizer.lemmatize(word) for word in x.split()]))
     sentences = comments_df['text'].to_list()
     original = comments_df['original'].to_list()
-    return sentences 
+    return sentences, original

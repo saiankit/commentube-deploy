@@ -19,8 +19,11 @@ from transformers import (
     T5Tokenizer, T5ForConditionalGeneration, T5Config, pipeline,
     AutoModelForSequenceClassification, AutoTokenizer
 )
-from sentiment_analysis import sentiment_analyse
 from streamlit_option_menu import option_menu
+from sentiment_analysis import predict_sentiments
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.express as px
 
 pd.set_option('mode.chained_assignment', None)  # Disable pandas SettingWithCopyWarning
 
@@ -52,133 +55,67 @@ with st.sidebar:
     }
     )
 
-def embedd_sentences(sentences, model_name):
-    """
-    Embeds a list of sentences using a sentence transformer model.
-
-    Args:
-        sentences: A list of sentences to be embedded.
-        model_name: The name of the sentence transformer model to use.
-
-    Returns:
-        A tuple of (corpus_embeddings, sentence_embeddings).
-    """
-
-    # Get the sentence transformer model.
-    model = SentenceTransformer(model_name)
-
-    # Encode the sentences.
-    sentence_embeddings = model.encode(sentences, batch_size=128)
-
-    # Normalize the sentence embeddings.
-    corpus_embeddings = sentence_embeddings / np.linalg.norm(sentence_embeddings, axis=1, keepdims=True)
-
-    return corpus_embeddings, sentence_embeddings
-
-def cluster_sentences(sentences, sentence_embedding, distance_threshold):
-    """
-    Clusters a list of sentences using agglomerative clustering.
-
-    Args:
-        sentences: A list of sentences to be clustered.
-        sentence_embeddings: The sentence embeddings of the sentences to be clustered.
-        distance_threshold: The distance threshold for clustering.
-
-    Returns:
-        A dictionary of clusters, where the key is the cluster id and the value is a list of sentences in the cluster.
-    """
-
-    # Create the clustering model.
-    clustering_model = AgglomerativeClustering(n_clusters=None, metric='cosine', linkage='average', distance_threshold=distance_threshold)
-
-    # Fit the clustering model to the sentence embeddings.
-    clustering_model.fit(sentence_embeddings)
-
-    # Get the cluster assignments.
-    cluster_assignment = clustering_model.labels_
-
-    # Create a dictionary of clusters.
-    clustered_sentences = {}
-    for sentence_id, cluster_id in enumerate(cluster_assignment):
-        if cluster_id not in clustered_sentences:
-            clustered_sentences[cluster_id] = []
-        clustered_sentences[cluster_id].append(sentences[sentence_id])
-
-    return clustered_sentences
-
-
 #predictor = ktrain.load_predictor('model1')
 #classifier = SentimentAnalyzer()
 
+
 def downloadCommentsFromURL(youtube_url):
+    """This function downloads the comments from a YouTube URL.
+
+    Args:
+        youtube_url (str): The YouTube URL.
+
+    Returns:
+        pd.DataFrame: A Pandas DataFrame containing the comments.
+    """
+
     downloader = YoutubeCommentDownloader()
     comments = downloader.get_comments_from_url(youtube_url)
     comments_data = []
+
     for comment in comments:
         data = {}
         data["text"] = comment["text"]
         data["cid"] = comment["cid"]
         data["time_parsed"] = comment["time"]
-    json_data = json.dumps(comments_data)
-    df = pd.read_json(json_data)
+        comments_data.append(data)
 
+    df = pd.DataFrame(comments_data)
+
+    return df
 
 def downloadComments():
-    downloader = YoutubeCommentDownloader()
-    comments = downloader.get_comments_from_url(youtube_url)
-    comments_data = []
-    for comment in comments:
-        data = {}
-        data["text"] = comment["text"]
-        data["cid"] = comment["cid"]
-        comments_data.append(data)
-    json_data = json.dumps(comments_data)
-    df = pd.read_json(json_data)
+    df = downloadCommentsFromURL(youtube_url)
     sentences, original = pre_process(df)
     #out = predictor.predict(sentences)
-   # sentiments = classifier.predict(sentences)
+    sentiments = predict_sentiments(sentences)
     for i in range(0, len(sentences)):
         st.write(card(original[i], out[i], list(sentiments[i].keys())[0]), unsafe_allow_html=True)
-    # positive_comments_percentage, negative_comments_percentage = sentiment_analyse(comments_df)
-    # with col3:
-    #     st.markdown(f'<h1 style="color:#33cf33;font-size:24px;">{"Positive Comments "} {positive_comments_percentage} {" %"} </h1>', unsafe_allow_html=True)
-    #     st.markdown(f'<h1 style="color:#FF6D60;font-size:24px;">{"Negative Comments "} {negative_comments_percentage} {" %"} </h1>', unsafe_allow_html=True)
-    # corpus_embeddings, sentence_embeddings = embedd_sentences(sentences, embedding_model)
-    # clustered_sentences = cluster_sentences(sentences, sentence_embeddings, 0.65)
-    # col11, col22 = st.columns(2)
-    # summaries = []
-    # for i, cluster in clustered_sentences.items():
-    #     combined_sentence = ""
-    #     for sentence in cluster:
-    #         combined_sentence += sentence
-    #     combined_sentence = combined_sentence.strip().replace("\n", "")
-    #     combined_sentence = manage_sentence(combined_sentence)
-    #     pipe = pipeline('summarization', model="./t5-small/")
-    #     output = pipe(combined_sentence)
-    #     summary = '\n'.join(sent_tokenize(output[0]['summary_text']))
-    #     element = {}
-    #     element["cluster"] = cluster
-    #     element["summary"] = summary
-    #     summaries.append(element)
-    # for element in summaries:
-    #     st.write(element)
 
+examples = [
+    {
+        "url" : "https://www.youtube.com/watch?v=LRJPk9BmJY4",
+        "path" : "./examples/example4.csv"
+    },
+    {
+        "url" : "https://www.youtube.com/watch?v=6ZrlsVx85ek",
+        "path" : "./examples/example2.csv"
+    },
+       {
+        "url" : "https://www.youtube.com/watch?v=ZMjKp5j1Lt8",
+        "path" : "./examples/example3.csv"
+    },
+    {
+        "url" : "https://www.youtube.com/watch?v=l5qU2Yrq_mc",
+        "path" : "./examples/example4.csv"
+    },
+
+] 
 col1, col2, col3 = st.columns([3,2,1])
 
 def show_image(youtube_url):
     col2.image(generate_image_link(youtube_url))
     col2.write(generate_text(youtube_url))
-
-def process_sentiments(sentiments):
-    sentiments_final = []
-    for i in range(0, len(sentiments)):
-        if sentiments[i].startswith("{'NEU"):
-            sentiments_final.append("Neutral")
-        elif sentiments[i].startswith("{'POS"):
-            sentiments_final.append("Positive")
-        else:
-            sentiments_final.append("Negative")
-    return sentiments_final
 
 def showCards(originals, sentiments, predictions):
     labels = st.session_state['labels']
@@ -202,19 +139,18 @@ selected_labels = []
 
 youtube_url = col1.text_input('Enter Youtube URL')
 col1.write('(or)')
-selected = col1.selectbox('Select from Example videos', ('','Example 1', 'Example 2'))
+selected = col1.selectbox('Select from Example videos', ('','Example 1', 'Example 2', 'Example 3', 'Example 4'))
 if col1.button('Run 🪄'):
     if selected == "":
         show_image(youtube_url)
         downloadComments()
     else:
         if selected == "Example 1":
-            show_image("https://www.youtube.com/watch?v=ZMjKp5j1Lt8")
-            df = pd.read_csv("video4-final.csv")
+            show_image(examples[0]["url"])
+            df = pd.read_csv(examples[0]["path"])
             originals = df['original'].to_list()
-            sentiments = process_sentiments(df['sentiments'].to_list())
+            sentiments = df['sentiments'].to_list()
             predictions = df['predictions'].to_list()
-            st.write(st.session_state)
             selected_labels = st.multiselect(
                 'Choose Labels',
                 options=comment_labels,
@@ -222,7 +158,30 @@ if col1.button('Run 🪄'):
                 on_change=handle_click,
                 args=(selected_labels,)
             )
-            st.session_state['labels'] = selected_labels 
+            fig1column, fig2column = st.columns([1,1])
+            st.session_state['labels'] = selected_labels
+            comment_types = df["sentiments"].value_counts()
+            df_comment_types = pd.DataFrame({"sentiment": comment_types.index, "Count": comment_types.values})
+            fig = px.pie(df_comment_types, values="Count", names="sentiment", title="Sentiment Type Distribution")
+            fig1column.plotly_chart(fig)
+            fig.update_layout(
+                width=800,  # Set the width of the chart
+                height=500,  # Set the height of the chart
+                margin=dict(l=50, r=50, t=50, b=50),  # Set the margins
+                autosize=False,  # Disable autosizing
+            )
+
+            prediction_types = df["predictions"].value_counts()
+            df_prediction_types = pd.DataFrame({"prediction": prediction_types.index, "Count": prediction_types.values})
+            fig = px.pie(df_prediction_types, values="Count", names="prediction", title="Prediction Type Distribution")
+            fig2column.plotly_chart(fig)
+            
+            fig.update_layout(
+    width=800,  # Set the width of the chart
+    height=500,  # Set the height of the chart
+    margin=dict(l=50, r=50, t=50, b=50),  # Set the margins
+    autosize=False,  # Disable autosizing
+)
 
             showCards(originals, sentiments, predictions)
             
